@@ -1,0 +1,111 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("/content/COVID_19_AMR_EMR_SEAR_Records.csv")
+df["Date_reported"] = pd.to_datetime(
+    df["Date_reported"])
+cols = ["New_cases", "New_deaths"]
+df[cols] = df[cols].clip(lower=0)
+df["Year"] = df["Date_reported"].dt.year
+
+# Short country names for chart labels
+short = {"United States of America": "USA",
+         "Iran (Islamic Republic of)": "Iran"}
+
+# Summaries used by the charts
+country = df.groupby("Country")[cols].sum()
+country.index = country.index.map(
+    lambda c: short.get(c, c))
+region = df.groupby("WHO_region")[cols].sum()
+daily = df.groupby("Date_reported")[cols].sum()
+cum = df.groupby("Country")[
+    ["Cumulative_cases",
+     "Cumulative_deaths"]].max()
+cum["WHO_region"] = df.drop_duplicates(
+    "Country").set_index("Country")["WHO_region"]
+
+# 1. Top 10 countries by new cases (bar)
+top = country.sort_values(
+    "New_cases", ascending=False)
+top.head(10).plot(kind="barh", y="New_cases")
+plt.title("Top 10 Countries by New Cases")
+plt.xlabel("Total New Cases")
+plt.show()
+
+# 2. Top 10 countries by new deaths (bar)
+topd = country.sort_values(
+    "New_deaths", ascending=False)
+topd.head(10).plot(kind="barh", y="New_deaths")
+plt.title("Top 10 Countries by New Deaths")
+plt.xlabel("Total New Deaths")
+plt.show()
+
+# 3. Region comparison (bar graph)
+region[["New_cases", "New_deaths"]].plot(
+    kind="bar", subplots=True, legend=False)
+plt.show()
+
+# 4. Share of new cases (pie chart)
+plt.pie(region["New_cases"],
+        labels=region.index, autopct="%1.1f%%")
+plt.title("Share of New Cases by WHO Region")
+plt.show()
+
+# 5. Distribution of new cases (histogram)
+nz = df[df["New_cases"] > 0]["New_cases"]
+plt.hist(np.log10(nz), bins=40)
+plt.xlabel("log10(New cases)")
+plt.title("Distribution of New Cases (Log)")
+plt.show()
+
+# 6. Spread by region (box plot)
+regions = ["AMR", "EMR", "SEAR"]
+data = [np.log10(df[(df["WHO_region"] == r)
+        & (df["New_cases"] > 0)]["New_cases"])
+        for r in regions]
+plt.boxplot(data)
+plt.xticks([1, 2, 3], regions)
+plt.ylabel("log10(New cases)")
+plt.title("New Cases Spread by WHO Region")
+plt.show()
+
+# 7. New cases per reported date (line)
+daily["New_cases"].plot()
+plt.title("Total New Cases per Reported Date")
+plt.show()
+
+# 8. New deaths per reported date (line)
+daily["New_deaths"].plot()
+plt.title("Total New Deaths per Reported Date")
+plt.show()
+
+# 9. New cases by year (bar graph)
+df.groupby("Year")["New_cases"].sum().plot(
+    kind="bar")
+plt.title("New Cases by Year")
+plt.show()
+
+# 10. Cumulative cases vs deaths (scatter)
+pos = cum[(cum["Cumulative_cases"] > 0)
+          & (cum["Cumulative_deaths"] > 0)]
+plt.scatter(pos["Cumulative_cases"],
+            pos["Cumulative_deaths"])
+plt.xscale("log")
+plt.yscale("log")
+plt.title("Cumulative Cases vs Deaths")
+plt.show()
+print(cum["Cumulative_cases"].corr(
+      cum["Cumulative_deaths"]))
+
+# 11. Case-fatality rate by region (bar)
+reg = cum.groupby("WHO_region")[
+    ["Cumulative_cases",
+     "Cumulative_deaths"]].sum()
+reg["CFR_%"] = np.round(
+    reg["Cumulative_deaths"] /
+    reg["Cumulative_cases"] * 100, 2)
+print(reg)
+reg["CFR_%"].plot(kind="bar")
+plt.title("Case-Fatality Rate by WHO Region")
+plt.show()
