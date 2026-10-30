@@ -1,0 +1,18 @@
+# Time-series and statistical analysis
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("COVID_19_AMR_EMR_SEAR_Records.csv")
+df["Date_reported"] = pd.to_datetime(df["Date_reported"])
+cols = ["New_cases", "New_deaths"]
+
+# Time-series analysis
+daily = df.groupby("Date_reported")[
+    ["New_cases", "New_deaths"]].sum()
+print(daily.head())
+
+
+# Descriptive statistics
+print(df.describe())
+print(df[["New_cases", "New_deaths"]].agg(
+    ["count", "mean", "median", "min", "max"]))
