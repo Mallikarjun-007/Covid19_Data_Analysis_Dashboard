@@ -1,0 +1,19 @@
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("/content/COVID_19_AMR_EMR_SEAR_Records.csv")
+df["Date_reported"] = pd.to_datetime(df["Date_reported"])
+cols = ["New_cases", "New_deaths"]
+df[cols] = df[cols].clip(lower=0)
+
+# Country-wise analysis
+country = df.groupby("Country")[
+    ["New_cases", "New_deaths"]].sum()
+top = country.sort_values("New_cases", ascending=False)
+print(top.head(10))
+
+# WHO region analysis
+region = df.groupby("WHO_region")[
+    ["New_cases", "New_deaths"]].sum()
+region["Share_%"] = np.round(region["New_cases"] / region["New_cases"].sum() * 100, 1)
+print(region)
