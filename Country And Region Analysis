@@ -17,3 +17,15 @@ region = df.groupby("WHO_region")[
     ["New_cases", "New_deaths"]].sum()
 region["Share_%"] = np.round(region["New_cases"] / region["New_cases"].sum() * 100, 1)
 print(region)
+
+
+# Cumulative cases and deaths by country (latest value)
+cum = df.groupby("Country")[["Cumulative_cases", "Cumulative_deaths"]].max()
+cum = cum.sort_values("Cumulative_cases", ascending=False)
+print(cum.head(10))
+
+# Case-fatality rate (CFR %) by region
+last = cum.join(df.drop_duplicates("Country").set_index("Country")["WHO_region"])
+reg = last.groupby("WHO_region")[["Cumulative_cases", "Cumulative_deaths"]].sum()
+reg["CFR_%"] = np.round(reg["Cumulative_deaths"] / reg["Cumulative_cases"] * 100, 2)
+print(reg)
