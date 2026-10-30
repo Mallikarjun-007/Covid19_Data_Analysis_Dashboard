@@ -1,0 +1,21 @@
+import pandas as pd
+import numpy as np
+
+# Load the COVID-19 AMR, EMR, SEAR dataset
+df = pd.read_csv("/content/COVID_19_AMR_EMR_SEAR_Records.csv")
+
+print(df.shape)
+print(df.head())
+print(df.info())
+
+# Check missing values and duplicate records
+print(df.isnull().sum())
+print(df.duplicated().sum())
+
+# Check negative values (numpy)
+print("Negative new cases :", np.sum(df["New_cases"] < 0))
+print("Negative new deaths:", np.sum(df["New_deaths"] < 0))
+
+df["Date_reported"] = pd.to_datetime(df["Date_reported"])
+cols = ["New_cases", "New_deaths"]
+df[cols] = df[cols].clip(lower=0)
